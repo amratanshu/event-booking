@@ -1,7 +1,6 @@
 const Event = require("../../models/event");
 const { transformEvent } = require("./merge");
-
-
+const User = require("../../models/user");
 
 module.exports = {
   events: () => {
@@ -20,13 +19,17 @@ module.exports = {
         throw err;
       });
   },
-  createEvent: (args) => {
+  createEvent: (args, req) => {
+    if (!req.isAuth) {
+      throw new Error("Unauthenticated!");
+    }
+
     const event = new Event({
       title: args.eventInput.title,
       description: args.eventInput.description,
       price: args.eventInput.price,
       date: new Date(args.eventInput.date),
-      creator: args.eventInput.creator,
+      creator: req.userId,
     });
     //now I can call some mongoose methods on this object, as this constructor/Class Event provides us with that
     //like the event.save() function
@@ -38,7 +41,7 @@ module.exports = {
         //we can return the whole result object here but it contains a lot of metadata which we do not need, so we use the spread operator in JS to return the core data which is in .doc
         createdEvent = transformEvent(result); //succesfully created
         //here we want to edit the user, and add the createdEvents field for that particular user!
-        return User.findById("5ef7789d795a86987757ba1f");
+        return User.findById(req.userId);
         // return { ...result._doc };
       })
       .then((user) => {
